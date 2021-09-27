@@ -1,12 +1,34 @@
-resource docker_image fortune {
-  name = "chukmunnlee/fortune:v2"
+variable dov_bear {
+  type = object({
+	image_name = string
+	container_port = number
+  })
 }
 
+
+variable instances {
+   type = number
+   default = 5
+}
+
+variable base_external_port {
+   type = number
+   default = 8080
+}
+
+
+resource docker_image fortune {
+   name = var.dov_bear.image_name
+}
+
+
 resource docker_container fortune {
-    name = "f0"
-    image = docker_image.fortune.latest
-    ports {
-        internal = 3000 
-        external = 8080
-    }
+   count = var.instances
+   name = "f${count.index}"
+   image = docker_image.fortune.latest
+   ports {
+       internal = var.dov_bear.container_port
+       external = var.base_external_port + count.index
+   }
+
 }
