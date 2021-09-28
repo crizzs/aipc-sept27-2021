@@ -1,4 +1,4 @@
-- name: Connectivity Test
+- name: Install TF and Packer
   hosts: all
   vars:
    tf_binary: https://releases.hashicorp.com/terraform/1.0.7/terraform_1.0.7_linux_amd64.zip

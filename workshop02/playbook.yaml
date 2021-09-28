@@ -89,10 +89,16 @@
       creates: /var/lib/mysql
     register: output
 
+  - name: Set Fact Extracted data 
+    set_fact: arrData="{{ output | json_query(jmesquery) }}"
+    vars:
+         jmesquery: "stderr_lines[5]"
 
-  - name: output from mysql
-    debug:
-      msg: "{{ output }}"
+  - name: Password output from mysql
+    set_fact: genPassword="{{ arrData.split(':')[-1].split() | join('') }}"
+
+  - name: Check Password
+    debug: msg="{{ genPassword }}" 
 
   - name: Generate the service file
     template:
@@ -105,3 +111,10 @@
       daemon_reload: yes
       enabled: yes 
       state: started
+
+  - name: Change old password
+    command:
+      argv:
+      - "mysql"
+      - "-u root"
+      - "-p {{ genPassword }} --connect-expired-password < sample.change_root_password.sql.j2"
