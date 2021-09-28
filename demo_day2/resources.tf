@@ -8,15 +8,24 @@ data digitalocean_ssh_key aipc-sept27 {
 }
 
 resource digitalocean_droplet myserver {
- name = "myserver"
+ count = 1
+ name = "myserver-${count.index}"
  image = "ubuntu-21-04-x64"
- size = "s-1vcpu-2gb"
+ size = "s-1vcpu-1gb"
  region = "sgp1"
 
  ssh_keys = [data.digitalocean_ssh_key.aipc-sept27.id]
 
 }
 
-output myserver_ip {
-    value = digitalocean_droplet.myserver.ipv4_address
+resource local_file inventory {
+ filename= "inventory.yaml"
+ file_permission = "0444"
+ content = templatefile("inventory.yaml.tpl",{
+    droplets = digitalocean_droplet.myserver
+ })
+}
+
+output ipv4 {
+ value = join (",", digitalocean_droplet.myserver[*].ipv4_address)
 }
