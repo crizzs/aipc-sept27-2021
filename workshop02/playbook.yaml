@@ -1,0 +1,107 @@
+- name: Install MySQL
+  hosts: all
+  become: yes
+  vars:
+   download_dir: '/usr/local/opt'
+   mysql_directory: 'mysql-8.0.26-linux-glibc2.12-x86_64'
+   dl_url: 'https://dev.mysql.com/get/Downloads/MySQL-8.0/mysql-8.0.26-linux-glibc2.12-x86_64.tar.xz'
+   grp_user_name: 'mysql'
+   pkgs_to_install: ['unzip', 'libaio1', 'libtinfo5']
+   mysql_base_dir: '/usr/local/opt/mysql'
+  tasks:
+  - name: Install the following packages - unzip, libaio1, libtinfo5
+    apt:
+      update_cache: yes
+      name: "{{ item }}"
+      state: latest
+    loop: "{{ pkgs_to_install }}"
+    register: result
+
+  - name: Create a group call mysql
+    group:
+      name: "{{ grp_user_name }}"
+      state: present
+
+  - name: Create a user call mysql and add it to the following groups - sudo, mysql
+    user:
+      name: "{{ grp_user_name }}"
+      state: present
+      groups: mysql,sudo
+      append: yes
+
+  - name: Create a directory in /usr/local/opt
+    file:
+      path: "{{ download_dir }}"
+      state: directory
+      mode: '0755'
+
+  - name: Check the file existence
+    stat:
+      path: "{{ download_dir }}/{{ mysql_directory }}.tar.xz"
+    register: file
+
+  - name: Download the https://dev.mysql.com/get/Downloads/MySQL-8.0/mysql-8.0.26-linux-glibc2.12-x86_64.tar.xz into /usr/local/opt
+    get_url:
+       url: "{{ dl_url }}"
+       dest: "{{ download_dir }}"
+    when: not file.stat.exists
+
+  - name: Unzip the archive into /usr/local/opt -> /opt/tmp/opt/mysql-8.0.26-linux-glibc2.12-x86_64
+    ansible.builtin.unarchive:
+       src: "{{ download_dir }}/{{ mysql_directory }}.tar.xz"
+       dest: "{{ download_dir }}"
+       remote_src: yes
+       creates: "{{ download_dir }}/{{ mysql_directory }}"
+
+  - name: Change ownership for mysql
+    file:
+       path: "{{ download_dir }}"
+       recurse: yes
+       owner: mysql
+       group: mysql
+
+  - name: Create symlink to folder
+    file:
+      src: "{{ download_dir }}/{{ mysql_directory }}"
+      dest:  "{{ download_dir }}/mysql"
+      owner: mysql
+      group: mysql
+      state: link
+
+  - name: Create symlink to /usr/local/bin
+    file:
+      src: "{{ download_dir }}/{{ mysql_directory }}/bin/mysql"
+      dest:  "/usr/local/bin/mysql"
+      state: link
+
+  - name: Add myCNF file 
+    template:
+      src: "./my.cnf.j2"
+      dest: "/etc/my.cnf"
+
+  - name: Initialise MySQL
+    command:
+      chdir: "{{ mysql_base_dir }}"
+      argv:
+      - "bin/mysqld"
+      - --initialize
+      - --user=mysql
+      creates: /var/lib/mysql
+    register: output
+
+
+  - name: output from mysql
+    debug:
+      msg: "{{ output }}"
+
+  - name: Generate the service file
+    template:
+      src: "./mysql.service.j2"
+      dest: "/lib/systemd/system/mysql.service"
+
+  - name: Enable and start MySQL
+    systemd:
+      name: mysql
+      daemon_reload: yes
+      enabled: yes 
+      state: started
