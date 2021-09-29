@@ -112,9 +112,13 @@
       enabled: yes 
       state: started
 
-  - name: Change old password
-    command:
-      argv:
-      - "mysql"
-      - "-u root"
-      - "-p {{ genPassword }} --connect-expired-password < sample.change_root_password.sql.j2"
+  - name: Generate the SQL script
+    template:
+      src: "./change_root_password.sql.j2"
+      dest: "{{ download_dir }}/change_root_password.sql"
+      mode: '0400'
+
+  - name: Change the root password  
+    shell:
+      chdir: "{{ download_dir }}/mysql"
+      cmd: "bin/mysql -uroot -p'{{ genPassword }}' --connect-expired-password < {{ download_dir }}/change_root_password.sql"

@@ -8,4 +8,5 @@ all:
   
     myserver-0:
       ansible_host: 178.128.90.178
+      mysql_root_password: mypassword
   
