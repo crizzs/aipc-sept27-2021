@@ -10,6 +10,16 @@ terraform {
       version = "2.1.0"
     }
   }
+  backend "s3" {
+    endpoint                    = "sgp1.digitaloceanspaces.com"
+    key                         = "workshop03/terraform.tfstate"
+    bucket                      = "terraformstate2909"
+    region                      = "sgp1"
+    skip_requesting_account_id  = true
+    skip_credentials_validation = true
+    skip_get_ec2_platforms      = true
+    skip_metadata_api_check     = true
+  }
 }
 
 provider "digitalocean" {
