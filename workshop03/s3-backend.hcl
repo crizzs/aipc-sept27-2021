@@ -1,2 +1,0 @@
-access_key="KA2YEHQK4SLXDOCH3EE7"
-secret_key="JPWuxMYzYxz9CVHhxgH9P3l6p9oglgxQUSEfwE76x4M"
