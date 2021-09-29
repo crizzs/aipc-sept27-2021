@@ -23,6 +23,10 @@ variable DO_size {
   default = "s-1vcpu-1gb"
 }
 
+resource "local_file" "root_at_ip" {
+ filename = "root@${digitalocean_droplet.mysql8_droplet.ipv4_address}"
+ file_permission="0444"
+}
 
 resource "digitalocean_droplet" "mysql8_droplet" {
   name = "mysql8-droplet"
